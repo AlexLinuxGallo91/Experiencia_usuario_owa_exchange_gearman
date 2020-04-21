@@ -1,0 +1,11 @@
+Vagrant.configure("2") do |config|
+
+  config.vm.box = "ubuntu/trusty64"
+  config.vm.synced_folder "./UX_OWA_Gearman", "/vagrant_data"
+  config.vm.provision "shell", path: "./UX_OWA_Gearman/scripts_instalacion_dependencias/dependencias_ubuntu.sh", run: 'always'
+
+  config.vm.provider "virtualbox" do |v|
+    v.memory = 2048
+    v.cpus = 4
+  end
+end
