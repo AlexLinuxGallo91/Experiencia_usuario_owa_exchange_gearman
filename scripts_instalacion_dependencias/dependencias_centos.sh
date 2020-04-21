@@ -17,6 +17,10 @@ sudo yum install -y python3-pip
 echo 'Instalando dependencias python3'
 sudo pip3 install --upgrade --ignore-installed urllib3
 sudo pip3 install selenium
+sudo pip3 install python3-gearman
+
+# instalacion de Nano
+sudo yum install -y nano
 
 # instalacion de git 
 echo 'Instalando git'

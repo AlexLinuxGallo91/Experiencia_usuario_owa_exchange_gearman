@@ -17,7 +17,6 @@ from temporizador import Temporizador
 from validacion_result import Result
 import constantes_json
 import logging
-import mysql.connector
 import json
 import time
 import sys
