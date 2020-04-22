@@ -61,10 +61,13 @@ tar xjf firefox-64.0.tar.bz2
 sudo rm -fr firefox-64.0.tar.bz2
 sudo mv firefox /opt/firefox-64.0
 sudo ln -s /opt/firefox-64.0/firefox /usr/bin/firefox
+sudo apt-get install -y Xvfb 
+sudo apt-get -y groupinstall "X Window System" "Desktop" "Fonts" "General Purpose Desktop"
+sudo apt-get -y install gtk3-devel
 
 # chrome (chromium)
 echo 'Instalando navegador chrome (chromium)'
-sudo apt-get install -y chromium-browser
+sudo apt install -y chromium-browser
 
 # phantomjs
 echo 'Instalando navegador phantomjs'

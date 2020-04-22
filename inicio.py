@@ -122,7 +122,11 @@ def configuracion_log():
 
     # verifica si el folder del log existe
     if not os.path.isdir(constantes_json.DIR_BASE_LOG):
-        os.mkdir(constantes_json.DIR_BASE_LOG)
+        try:
+            os.mkdir(constantes_json.DIR_BASE_LOG)
+        except OSError as e:
+            print('sucedio un error al crear el directorio del log {} : {}'
+            .format(constantes_json.DIR_BASE_LOG, e))
 
     # verifica que el archivo del log exista en caso contrario lo crea
     if not os.path.exists(constantes_json.PATH_ABSOLUTO_LOG):
@@ -136,7 +140,6 @@ def configuracion_log():
                         datefmt='%d-%m-%YT%H:%M:%S')
     
     logging.info('Inicializando log: {}'.format(constantes_json.PATH_ABSOLUTO_LOG))
-
 
 
 # Punto de partida/ejecucion principal del script
@@ -166,5 +169,7 @@ def main(cadena_json=''):
         logging.error('"{}" - JSON invalido, se omite exp. de usuario'.format(cadena_json))
         print('"{}" - JSON invalido, se omite exp. de usuario'.format(cadena_json))
         response = '"{}" - JSON invalido, se omite exp. de usuario'.format(cadena_json)
+
+    logging.info('Response generado: {}'.format(response))
 
     return response

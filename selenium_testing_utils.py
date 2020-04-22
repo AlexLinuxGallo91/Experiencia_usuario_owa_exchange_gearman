@@ -15,6 +15,7 @@ from correo import Correo
 from format_utils import FormatUtils
 from temporizador import Temporizador
 from validacion_result import Result
+import warnings
 import constantes_json
 import logging
 import json
@@ -32,10 +33,13 @@ class SeleniumTesting:
     @staticmethod
     def inicializar_webdriver_phantom_js(path_driver):
 
+        # suprime el mensaje warning del uso de phantomjs ya que es una libreria obsoleta
+        warnings.filterwarnings('ignore')
+        
         driver = webdriver.PhantomJS(service_args=['--ignore-ssl-errors=true', '--ssl-protocol=any'], 
                                      executable_path=path_driver)
         driver.set_window_size(1120,550)
-
+        
         return driver
 
 
@@ -60,14 +64,13 @@ class SeleniumTesting:
         perfil_firefox.accept_untrusted_certs = True
         perfil_firefox.assume_untrusted_cert_issuer = False
 
-        opciones_firefox.headless = True
-
+        opciones_firefox.headless = False
         try:
             webdriver_firefox = webdriver.Firefox(executable_path=path_driver,
                                  firefox_options=opciones_firefox,
                                  firefox_profile=perfil_firefox,
                                  capabilities=firefox_capabilities,
-                                 service_log_path=constantes_json.DEV_NULL
+                                #  log_path=constantes_json.DEV_NULL
                                  )
         except FileNotFoundError as e:
             SeleniumTesting.log.error('Sucedio un error al intentar configurar el webdriver: {}'.format(e))
@@ -103,6 +106,8 @@ class SeleniumTesting:
         opciones_chrome.add_argument('--allow-running-insecure-content')
         opciones_chrome.add_argument("--enable-javascript")
         opciones_chrome.add_argument('window-size=1920x1080')
+        opciones_chrome.add_argument('--no-sandbox')
+        opciones_chrome.add_experimental_option('excludeSwitches', ['enable-logging'])
 
         chrome_capabilities = webdriver.DesiredCapabilities().CHROME.copy()
         chrome_capabilities['acceptSslCerts'] = True
@@ -170,16 +175,20 @@ class SeleniumTesting:
 
             input_usuario = driver.find_element_by_id('username')
             input_password = driver.find_element_by_id('password')
+            check_casilla_owa_2010_version_ligera = None
             boton_ingreso_correo = None
 
-            # verifica si el boton de inicio de sesion pertenece a una version
-            # especifica del owa 2013 o 2016
+            # verifica si se encuentra la casilla con el id chkBsc, el cual pertenece a la version
+            # ligera de la plataforma de Exchange 2010
+            if SeleniumTesting.verificar_elemento_encontrado_por_id(driver, 'chkBsc'):
+                
+                # selecciona el check para ingresar a la plataforma ligera
+                check_casilla_owa_2010_version_ligera = driver.find_element_by_id('chkBsc')
+                check_casilla_owa_2010_version_ligera.click()
+                SeleniumTesting.owa_descubierto = 2010
 
             if SeleniumTesting.verificar_elemento_encontrado_por_xpath(driver, xpath_btn_owa_2010):
-                boton_ingreso_correo = driver.find_element_by_xpath(
-                    xpath_btn_owa_2010)
-
-                # establece la bandera version owa por analizar
+                boton_ingreso_correo = driver.find_element_by_xpath(xpath_btn_owa_2010)
                 SeleniumTesting.owa_descubierto = 2010
 
             elif SeleniumTesting.verificar_elemento_encontrado_por_xpath(driver, xpath_btn_owa_2013_2016):
@@ -198,7 +207,7 @@ class SeleniumTesting:
             input_password.send_keys(correo_en_prueba.password)
 
             time.sleep(1)
-            boton_ingreso_correo.send_keys(Keys.RETURN)
+            boton_ingreso_correo.click()
 
             time.sleep(16)
         except NoSuchElementException as e:
@@ -252,6 +261,11 @@ class SeleniumTesting:
                 resultado.validacion_correcta = False
                 SeleniumTesting.log.error(resultado.mensaje_error)
             except JavascriptException as e:
+                # Esto es debido a que no se encontro el mensaje de error de credenciales incorrectas
+                resultado.mensaje_error = constantes_json.OUTPUT_EXITOSO_1_1
+                resultado.validacion_correcta = True
+                SeleniumTesting.log.info(resultado.mensaje_error)
+            except WebDriverException as e:
                 # Esto es debido a que no se encontro el mensaje de error de credenciales incorrectas
                 resultado.mensaje_error = constantes_json.OUTPUT_EXITOSO_1_1
                 resultado.validacion_correcta = True
@@ -330,7 +344,7 @@ class SeleniumTesting:
 
         clase_css_carpeta_owa_2016 = "_n_C4"
         clase_css_carpeta_owa_2013 = '_n_Z6'
-        xpath_carpeta_owa_2010 = "//*[@id='spnFldrNm']"
+        xpath_carpeta_owa_2010 = "//a[@name='lnkFldr']"
 
         # verifica que owa es con respecto a las clases que contienen los divs y span de las carpetas
         if SeleniumTesting.verificar_elemento_encontrado_por_clase_js(driver, clase_css_carpeta_owa_2016):
@@ -362,8 +376,13 @@ class SeleniumTesting:
                 'No se obtuvieron carpetas, no se reconoce la version del owa')
 
         for carpeta in lista_de_carpetas_localizadas:
-            nombre_de_carpeta = FormatUtils.remover_backspaces(
-                carpeta.get_attribute('innerHTML'))
+            
+            if SeleniumTesting.owa_descubierto == 2010:
+                nombre_de_carpeta = carpeta.text
+            else:
+                nombre_de_carpeta = FormatUtils.remover_backspaces(
+                    carpeta.get_attribute('innerHTML'))
+        
             SeleniumTesting.log.info(
                 'Se obtiene la carpeta: {}'.format(nombre_de_carpeta))
             lista_nombres_de_carpetas_formateadas.append(nombre_de_carpeta)
@@ -418,7 +437,7 @@ class SeleniumTesting:
                         elemento_html_carpeta.click()
                         time.sleep(6)
                     elif SeleniumTesting.owa_descubierto == 2010:
-                        elemento_html_carpeta = driver.find_element_by_xpath('//span[@id="spnFldrNm"][@fldrnm="{}"]'.format(carpeta))
+                        elemento_html_carpeta = driver.find_element_by_xpath('//a[@name="lnkFldr"][@title="{}"]'.format(carpeta))
                         time.sleep(3)
                         SeleniumTesting.verificar_dialogo_de_interrupcion(
                             driver, result_navegacion_carpetas)
@@ -506,6 +525,7 @@ class SeleniumTesting:
         resultado_cierre_sesion.inicializar_tiempo_de_ejecucion()
         url_actual = ''
         elemento_html_btn_cerrar_sesion = None
+        url_match_cierre_sesion = False
 
         try:
             driver.refresh()
@@ -517,7 +537,7 @@ class SeleniumTesting:
 
             if SeleniumTesting.owa_descubierto == 2010:
                 elemento_html_btn_cerrar_sesion = driver.find_element_by_id(
-                    'aLogOff')
+                    'lo')
                 elemento_html_btn_cerrar_sesion.click()
                 time.sleep(8)
             elif SeleniumTesting.owa_descubierto == 2016:
@@ -526,7 +546,6 @@ class SeleniumTesting:
                 ''')
 
                 time.sleep(2)
-
                 driver.execute_script('''
                     var boton_cierre_sesion = document.evaluate('//span[text()="Cerrar sesi\u00f3n"]', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
                     boton_cierre_sesion.click();
@@ -544,9 +563,10 @@ class SeleniumTesting:
                 ''')
 
             # obtiene la url actual como una cadena
-            time.sleep(4)
+            time.sleep(6)
             url_actual = driver.current_url
-            SeleniumTesting.log.info('Se cierra la sesion, estando en la url actual: {}'.format(url_actual))
+            SeleniumTesting.log.info('Se cierra la sesion, obteniendo la siguiente url de cierre de sesion: {}'
+                                     .format(url_actual))
 
         except NoSuchElementException as e:
             SeleniumTesting.log.error(
@@ -571,15 +591,14 @@ class SeleniumTesting:
             driver.quit()
 
         if 'exchangeadministrado.com/owa/auth/logoff.aspx' in url_actual:
-            SeleniumTesting.log.info('Se cierra con exito la sesion')
-            resultado_cierre_sesion.mensaje_error = constantes_json.OUTPUT_EXITOSO_3_1
-            resultado_cierre_sesion.validacion_correcta = True
+            url_match_cierre_sesion = True
         elif 'outlook.correoexchange.com.mx/owa/auth/logon.aspx' in url_actual:
-            SeleniumTesting.log.info('Se cierra con exito la sesion')
-            resultado_cierre_sesion.mensaje_error = constantes_json.OUTPUT_EXITOSO_3_1
-            resultado_cierre_sesion.validacion_correcta = True
+            url_match_cierre_sesion = True
         elif 'outlook.correoexchange.mx/owa/auth/logon.aspx' in url_actual:
-            SeleniumTesting.log.info('Se cierra con exito la sesion')
+            url_match_cierre_sesion = True
+
+        if url_match_cierre_sesion:
+            SeleniumTesting.log.info('Se cierra con exito la sesion dentro de la plataforma OWA')
             resultado_cierre_sesion.mensaje_error = constantes_json.OUTPUT_EXITOSO_3_1
             resultado_cierre_sesion.validacion_correcta = True
         else:

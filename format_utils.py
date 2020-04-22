@@ -1,3 +1,4 @@
+import constantes_json
 import configparser
 import logging
 import json
@@ -5,19 +6,18 @@ import json
 class FormatUtils:
 
     CADENA_VACIA = ''
-    NOMBRE_ARCHIVO_CONFIGURACION = 'config.ini'
     BACKSPACE = '&nbsp;'
     ESPACIO = ' '
     log = logging.getLogger(__name__)
 
-    # lector de propiedades dentro de un archivo ini
+    # funcion encargada de leer las propiedades/secciones del archivo de configuracion config.ini
     @staticmethod
     def lector_archivo_ini():
         config = None
 
         try:
             config = configparser.ConfigParser()
-            config.read(FormatUtils.NOMBRE_ARCHIVO_CONFIGURACION)
+            config.read(constantes_json.PATH_ARCHIVO_CONFIG_INI)
         except configparser.Error as e:
             FormatUtils.log.error('sucedio un error al leer el archivo de configuracion: {}'.format(e))
         
@@ -30,6 +30,8 @@ class FormatUtils:
         return cadena.replace(FormatUtils.BACKSPACE, FormatUtils.ESPACIO)
 
 
+    # verifica que una cadena sea un formato valido JSON. En caso exitoso
+    # la funcion devuelve True, en caso contrario False
     @staticmethod
     def cadena_a_json_valido(cadena=''):
         try:

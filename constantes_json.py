@@ -8,6 +8,8 @@ PATH_ABSOLUTO_LOG = ''
 DIR_BASE_LOG = ''
 EXTENSION_FILE_LOG = '.log'
 DEV_NULL = '/dev/null'
+NOMBRE_ARCHIVO_CONFIG_INI = 'config.ini'
+PATH_ARCHIVO_CONFIG_INI = ''
 
 # banderas para los estatus en cada validacion
 STATUS_CORRECTO = 'SUCCESS'
@@ -45,6 +47,8 @@ def configuracion_archivo_configuracion(nombre_modulo):
     global NOMBRE_BASE_FILE_LOG 
     global EXTENSION_FILE_LOG
     global DIR_BASE_LOG
+    global NOMBRE_ARCHIVO_CONFIG_INI
+    global PATH_ARCHIVO_CONFIG_INI
     
     # establece el path absoluto del nuevo log a crear
     fecha = datetime.datetime.now()
@@ -56,7 +60,10 @@ def configuracion_archivo_configuracion(nombre_modulo):
     PATH_BASE_PROYECTO = os.path.dirname(os.path.abspath(nombre_modulo))
     DIR_BASE_LOG = os.path.join(PATH_BASE_PROYECTO, 'Logs')
 
-    #se establece el nombre del log por generar
+    # se establece el nombre del log por generar
     NOMBRE_BASE_FILE_LOG = '{}{}{}{}'.format(NOMBRE_BASE_FILE_LOG,'_',fecha_cadena,EXTENSION_FILE_LOG)
     PATH_ABSOLUTO_LOG = os.path.join(DIR_BASE_LOG, NOMBRE_BASE_FILE_LOG)
+
+    # se establece el path del archivo config.ini
+    PATH_ARCHIVO_CONFIG_INI = os.path.join(PATH_BASE_PROYECTO, NOMBRE_ARCHIVO_CONFIG_INI)
 

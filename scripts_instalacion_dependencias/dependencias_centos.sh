@@ -59,12 +59,16 @@ cd ~
 wget https://ftp.mozilla.org/pub/firefox/releases/64.0/linux-x86_64/en-US/firefox-64.0.tar.bz2
 tar xjf firefox-64.0.tar.bz2
 sudo rm -fr firefox-64.0.tar.bz2
-sudo mv firefox /opt/firefox-64.0
-sudo ln -s /opt/firefox-64.0/firefox /usr/bin/firefox
+sudo mv firefox /usr/local/firefox-64.0
+sudo ln -s /usr/local/firefox-64.0/firefox /usr/local/bin/firefox
+sudo yum install -y Xvfb 
+sudo yum -y groupinstall "X Window System" "Desktop" "Fonts" "General Purpose Desktop"
+sudo yum -y install gtk3-devel
 
 # chrome (chromium)
 echo 'Instalando navegador chrome (chromium)'
-sudo yum install -y chromium-browser
+sudo yum install -y epel-release
+sudo yum install -y chromium
 
 # phantomjs
 echo 'Instalando navegador phantomjs'
