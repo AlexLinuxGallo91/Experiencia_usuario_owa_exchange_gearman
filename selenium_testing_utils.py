@@ -40,7 +40,8 @@ class SeleniumTesting:
         
         try:
             webdriver_phantomjs = webdriver.PhantomJS(service_args=['--ignore-ssl-errors=true', '--ssl-protocol=any'], 
-                                         executable_path=path_driver)
+                                                      executable_path=path_driver, 
+                                                      service_log_path=constantes_json.DEV_NULL)
             webdriver_phantomjs.set_window_size(1120,550)
         except FileNotFoundError as e:
             SeleniumTesting.log.error('Sucedio un error al intentar configurar el webdriver: {}'.format(e))
@@ -73,13 +74,13 @@ class SeleniumTesting:
         perfil_firefox.accept_untrusted_certs = True
         perfil_firefox.assume_untrusted_cert_issuer = False
 
-        opciones_firefox.headless = False
+        opciones_firefox.headless = True
         try:
             webdriver_firefox = webdriver.Firefox(executable_path=path_driver,
                                  firefox_options=opciones_firefox,
                                  firefox_profile=perfil_firefox,
                                  capabilities=firefox_capabilities,
-                                #  log_path=constantes_json.DEV_NULL
+                                 log_path=constantes_json.DEV_NULL
                                  )
         except FileNotFoundError as e:
             SeleniumTesting.log.error('Sucedio un error al intentar configurar el webdriver: {}'.format(e))
@@ -92,21 +93,6 @@ class SeleniumTesting:
 
     # inicializa un nuevo driver (chrome driver) para la experiencia de usuario
     # con el uso del navefador google chrome
-    #
-    # UPDATE 29/enero/2020 11:51 P.M.
-    #
-    # En caso de utilizar el driver de chrome, el test de experiencia de usuario
-    # en el OWA fallara. Esto debido a que al momento de inicializar el driver
-    # en modo "headless" (sin usar una interfaz grafica o el navegador en modo grafico)
-    # no podra ejecutar ni permitir scripts en javascript. El ultimo paso
-    # que se realiza de manera exitosa es al ingresar al portal de acceso OWA, pero
-    # al momento de navegar entre las carpetas y cerrar la sesion, estos pasos fallaran,
-    # debido a que no renderiza/carga todo el contenido del sitio web por no permitir
-    # la ejecucion de scripts al momento de utilizar el driver en modo headless.
-    #
-    # Por ello es mejor utilizar el driver de Firefox, ya que hasta el momento es el
-    # que ha dado menos problemas en realizar la prueba conectividad al OWA
-
     @staticmethod
     def inicializar_webdriver_chrome(path_driver):
 
@@ -129,8 +115,10 @@ class SeleniumTesting:
         chrome_capabilities['acceptInsecureCerts'] = True
 
         try:
-            webdriver_chrome = webdriver.Chrome(path_driver, chrome_options=opciones_chrome,
-                                    desired_capabilities=chrome_capabilities)
+            webdriver_chrome = webdriver.Chrome(path_driver, 
+                                                chrome_options=opciones_chrome,
+                                                desired_capabilities=chrome_capabilities,
+                                                service_log_path=constantes_json.DEV_NULL)
         except FileNotFoundError as e:
             SeleniumTesting.log.error('Sucedio un error al intentar configurar el webdriver: {}'.format(e))
             #sys.exit()
