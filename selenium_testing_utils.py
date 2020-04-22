@@ -33,14 +33,23 @@ class SeleniumTesting:
     @staticmethod
     def inicializar_webdriver_phantom_js(path_driver):
 
+        webdriver_phantomjs = None
+
         # suprime el mensaje warning del uso de phantomjs ya que es una libreria obsoleta
         warnings.filterwarnings('ignore')
         
-        driver = webdriver.PhantomJS(service_args=['--ignore-ssl-errors=true', '--ssl-protocol=any'], 
-                                     executable_path=path_driver)
-        driver.set_window_size(1120,550)
-        
-        return driver
+        try:
+            webdriver_phantomjs = webdriver.PhantomJS(service_args=['--ignore-ssl-errors=true', '--ssl-protocol=any'], 
+                                         executable_path=path_driver)
+            webdriver_phantomjs.set_window_size(1120,550)
+        except FileNotFoundError as e:
+            SeleniumTesting.log.error('Sucedio un error al intentar configurar el webdriver: {}'.format(e))
+            #sys.exit()
+        except Exception as e:
+            SeleniumTesting.log.error('Sucedio una excepcion al intentar configurar el webdriver {}'.format(e))
+            #sys.exit()
+
+        return webdriver_phantomjs
 
 
     # inicializa un nuevo driver (firefox) para la experiencia de usuario
@@ -74,7 +83,10 @@ class SeleniumTesting:
                                  )
         except FileNotFoundError as e:
             SeleniumTesting.log.error('Sucedio un error al intentar configurar el webdriver: {}'.format(e))
-            sys.exit()
+            #sys.exit()
+        except Exception as e:
+            SeleniumTesting.log.error('Sucedio una excepcion al intentar configurar el webdriver {}'.format(e))
+            #sys.exit()
 
         return webdriver_firefox
 
@@ -97,6 +109,9 @@ class SeleniumTesting:
 
     @staticmethod
     def inicializar_webdriver_chrome(path_driver):
+
+        webdriver_chrome = None
+
         opciones_chrome = webdriver.ChromeOptions()
 
         # ignora las certificaciones de seguridad, esto solamente se realiza
@@ -113,8 +128,18 @@ class SeleniumTesting:
         chrome_capabilities['acceptSslCerts'] = True
         chrome_capabilities['acceptInsecureCerts'] = True
 
-        return webdriver.Chrome(path_driver, chrome_options=opciones_chrome,
-                                desired_capabilities=chrome_capabilities)
+        try:
+            webdriver_chrome = webdriver.Chrome(path_driver, chrome_options=opciones_chrome,
+                                    desired_capabilities=chrome_capabilities)
+        except FileNotFoundError as e:
+            SeleniumTesting.log.error('Sucedio un error al intentar configurar el webdriver: {}'.format(e))
+            #sys.exit()
+        except Exception as e:
+            SeleniumTesting.log.error('Sucedio una excepcion al intentar configurar el webdriver {}'.format(e))
+            #sys.exit()
+
+        return webdriver_chrome
+
 
     # funcion el cual permite navegar hacia la url que se establezca como parametro
     @staticmethod
