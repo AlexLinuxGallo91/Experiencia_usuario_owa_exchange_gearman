@@ -143,11 +143,12 @@ def configuracion_log(correo_por_probar):
                 log = open(constantes_json.PATH_ABSOLUTO_LOG, 'x')
                 log.close()
                 break
-            except FileNotFoundError as e:
-                print('no se encuentra el archivo del log: {}'.format(e))
             except OSError as e:
                 print('Se tiene acceso denegado para escribir el archivo {}, '\
-                    'favor de establecer los permisos necesarios en el directorio Logs').format(e)
+                    'favor de establecer los permisos necesarios en el directorio Logs'.format(e))
+                print('Favor de establecer los permisos necesarios para escribir'\
+                     ' ficheros dentro del directorio Logs. Se procede a finalizar el script')
+                sys.exit()
         else:
             print('El log {}, ya existe, se procede a generar un nuevo log'.format(constantes_json.PATH_ABSOLUTO_LOG))
             continue
