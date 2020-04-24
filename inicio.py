@@ -118,7 +118,7 @@ def iniciar_prueba(correo, url_exchange):
     return json.dumps(objeto_json)
 
 
-def configuracion_log():
+def configuracion_log(correo_por_probar):
 
     # verifica si el folder del log existe
     if not os.path.isdir(constantes_json.DIR_BASE_LOG):
@@ -128,10 +128,26 @@ def configuracion_log():
             print('sucedio un error al crear el directorio del log {} : {}'
             .format(constantes_json.DIR_BASE_LOG, e))
 
-    # verifica que el archivo del log exista en caso contrario lo crea
-    if not os.path.exists(constantes_json.PATH_ABSOLUTO_LOG):
-        log = open(constantes_json.PATH_ABSOLUTO_LOG, 'x')
-        log.close()
+    # se verifica si el nombre del archivo existe, en caso contrario
+    # crea el nuevo archivo log y sale del ciclo
+    while True:
+        
+        # verifica que el archivo del log exista en caso contrario lo crea
+        FormatUtils.generar_nombre_log(correo_por_probar)
+
+        if not os.path.exists(constantes_json.PATH_ABSOLUTO_LOG):
+            try:
+                log = open(constantes_json.PATH_ABSOLUTO_LOG, 'x')
+                log.close()
+                break
+            except FileNotFoundError as e:
+                print('no se encuentra el archivo del log: {}'.format(e))
+            except OSError as e:
+                print('Se tiene acceso denegado para escribir el archivo {}, '\
+                    'favor de establecer los permisos necesarios en el directorio Logs').format(e)
+        else:
+            print('El log {}, ya existe, se procede a generar un nuevo log'.format(constantes_json.PATH_ABSOLUTO_LOG))
+            continue
 
     logging.basicConfig(level=logging.INFO, 
                         filename=constantes_json.PATH_ABSOLUTO_LOG, 
@@ -141,31 +157,32 @@ def configuracion_log():
     
     logging.info('Inicializando log: {}'.format(constantes_json.PATH_ABSOLUTO_LOG))
 
-
 # Punto de partida/ejecucion principal del script
 def main(cadena_json=''):
     response = FormatUtils.CADENA_VACIA
     correo_a_probar = None
 
-    constantes_json.configuracion_archivo_configuracion(__file__)
-    configuracion_log()
-    
+    constantes_json.configurar_paths_constantes(__file__)
+
     # verifica que la cadena sea un json valido en caso contrario 
     # se omite la experiencia de usuario
     cadena_json = cadena_json.strip()
+    
     if FormatUtils.cadena_a_json_valido(cadena_json):
-        logging.info('"{}" - JSON valido'.format(cadena_json))
-        
         objeto_json = json.loads(cadena_json)
-
+        
         url_exchange = objeto_json['url']
         usuario = objeto_json['user']
         password = objeto_json['password']
 
+        configuracion_log(usuario)
+
         correo_a_probar = Correo(usuario, password, url_exchange)
-        
+        logging.info('"{}" - JSON valido'.format(cadena_json))        
         response = iniciar_prueba(correo_a_probar, correo_a_probar.url)
+
     else:
+        configuracion_log(constantes_json.JSON_INVALIDO)
         logging.error('"{}" - JSON invalido, se omite exp. de usuario'.format(cadena_json))
         print('"{}" - JSON invalido, se omite exp. de usuario'.format(cadena_json))
         response = '"{}" - JSON invalido, se omite exp. de usuario'.format(cadena_json)

@@ -11,6 +11,9 @@ DEV_NULL = '/dev/null'
 NOMBRE_ARCHIVO_CONFIG_INI = 'config.ini'
 PATH_ARCHIVO_CONFIG_INI = ''
 
+# bandera JSON invalido
+JSON_INVALIDO = 'JsonInvalido'
+
 # banderas para los estatus en cada validacion
 STATUS_CORRECTO = 'SUCCESS'
 STATUS_FALLIDO = 'FAILED'
@@ -41,28 +44,14 @@ VALDACION_CORRECTA_PASO_2_1 = "Se navega correctamente en las carpetas del corre
 VALDACION_CORRECTA_PASO_3_1 = "Se cierra correctamente la sesi\u00f3n"
 
 # establece todas las constantes al inicio del script
-def configuracion_archivo_configuracion(nombre_modulo):
+def configurar_paths_constantes(nombre_modulo):
     global PATH_BASE_PROYECTO
-    global PATH_ABSOLUTO_LOG
-    global NOMBRE_BASE_FILE_LOG 
-    global EXTENSION_FILE_LOG
     global DIR_BASE_LOG
     global NOMBRE_ARCHIVO_CONFIG_INI
     global PATH_ARCHIVO_CONFIG_INI
     
-    # establece el path absoluto del nuevo log a crear
-    fecha = datetime.datetime.now()
-    microsegundos_cadena = str(fecha.microsecond)
-    microsegundos_cadena = microsegundos_cadena[:2]
-    fecha_cadena = fecha.strftime('%Y_%m_%d_%H_%M_%S')
-    fecha_cadena = '{}_{}'.format(fecha_cadena, microsegundos_cadena)
-
     PATH_BASE_PROYECTO = os.path.dirname(os.path.abspath(nombre_modulo))
     DIR_BASE_LOG = os.path.join(PATH_BASE_PROYECTO, 'Logs')
-
-    # se establece el nombre del log por generar
-    NOMBRE_BASE_FILE_LOG = '{}{}{}{}'.format(NOMBRE_BASE_FILE_LOG,'_',fecha_cadena,EXTENSION_FILE_LOG)
-    PATH_ABSOLUTO_LOG = os.path.join(DIR_BASE_LOG, NOMBRE_BASE_FILE_LOG)
 
     # se establece el path del archivo config.ini
     PATH_ARCHIVO_CONFIG_INI = os.path.join(PATH_BASE_PROYECTO, NOMBRE_ARCHIVO_CONFIG_INI)
