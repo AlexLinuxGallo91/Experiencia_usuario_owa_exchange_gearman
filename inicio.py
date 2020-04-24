@@ -127,6 +127,9 @@ def configuracion_log(correo_por_probar):
         except OSError as e:
             print('sucedio un error al crear el directorio del log {} : {}'
             .format(constantes_json.DIR_BASE_LOG, e))
+            print('Favor de establecer la carpeta Logs dentro del proyecto con los'\
+                  ' permisos necesarios, se procede a terminar el script')
+            sys.exit()
 
     # se verifica si el nombre del archivo existe, en caso contrario
     # crea el nuevo archivo log y sale del ciclo
