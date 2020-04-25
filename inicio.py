@@ -165,7 +165,10 @@ def configuracion_log(correo_por_probar):
     FormatUtils.verificacion_depuracion_de_logs(constantes_json.DIR_BASE_LOG)
 
 # Punto de partida/ejecucion principal del script
-def main(cadena_json=''):
+def main():
+
+    args = sys.argv[1:]
+    cadena_json = args[0]
     response = FormatUtils.CADENA_VACIA
     correo_a_probar = None
 
@@ -196,4 +199,4 @@ def main(cadena_json=''):
 
     logging.info('Response generado: {}'.format(response))
 
-    return response
+    print(response)
