@@ -200,3 +200,6 @@ def main():
     logging.info('Response generado: {}'.format(response))
 
     print(response)
+
+
+main()
