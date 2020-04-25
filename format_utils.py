@@ -34,8 +34,12 @@ class FormatUtils:
         tamanio_total = 0
         for dirpath, dirnames, filenames in os.walk(master_path):
             for f in filenames:
-                fp = os.path.join(dirpath, f)
-                tamanio_total += os.path.getsize(fp)
+                try:
+                    fp = os.path.join(dirpath, f)
+                    tamanio_total += os.path.getsize(fp)
+                except OSError as e:
+                    FormatUtils.log.error('Sucedio un error al obtener '\
+                                          'el peso del archivo {} : {}'.format(fp,e))                    
         
         # regresa el tamnanio del folder en MB
         return int(tamanio_total/(1024*1024))
