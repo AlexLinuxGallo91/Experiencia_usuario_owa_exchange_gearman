@@ -12,6 +12,7 @@ class FormatUtils:
     CADENA_VACIA = ''
     BACKSPACE = '&nbsp;'
     ESPACIO = ' '
+    num_archivos_eliminados = 0
     log = logging.getLogger(__name__)
 
     # funcion encargada de leer las propiedades/secciones del archivo de configuracion config.ini
@@ -26,7 +27,80 @@ class FormatUtils:
             FormatUtils.log.error('sucedio un error al leer el archivo de configuracion: {}'.format(e))
         
         return config
-            
+
+    # funcion encargada de obtener el tamanio de un directorio (el resultado los da en MB)
+    @staticmethod
+    def obtener_tamanio_folder(master_path=''):
+        tamanio_total = 0
+        for dirpath, dirnames, filenames in os.walk(master_path):
+            for f in filenames:
+                fp = os.path.join(dirpath, f)
+                tamanio_total += os.path.getsize(fp)
+        
+        # regresa el tamnanio del folder en MB
+        return int(tamanio_total/(1024*1024))
+
+    # funcion encargada de obtener una lista de paths absolutos en donde residen los archivos del 
+    # directorio que se adjunta como argumento
+    @staticmethod
+    def obtener_lista_paths_archivos(master_path=''):
+        list_files = []
+
+        for dirpath, dirnames, filenames in os.walk(master_path):
+            for f in filenames:
+                fp = os.path.join(dirpath, f)
+                list_files.append(fp)
+        
+        # se obtienen los paths de los archivos dentro del folder Logs
+        return list_files
+
+    # funcion encargada de verificar si el archivo a eliminar sobrepasa la regla
+    # de un cierto numero de horas, si rebasa el numero de horas establecido, el archivo
+    # se elimina 
+    @staticmethod
+    def verificar_diferencia_fecha_archivo_eliminacion(horas=1, path_archivo=''):
+        fecha_ahora = datetime.datetime.now()
+        fecha_archivo = None
+        diferencia_en_horas = 0
+        num_archivos_eliminado = 0
+
+        try:
+            fecha_archivo = datetime.datetime.fromtimestamp(os.path.getmtime(path_archivo))
+            diferencia_en_horas = fecha_ahora - fecha_archivo
+            diferencia_en_horas = int(divmod(diferencia_en_horas.total_seconds(), 3600)[0])
+
+            if(diferencia_en_horas > horas):
+                os.remove(path_archivo)
+                FormatUtils.num_archivos_eliminados += 1
+
+        except OSError as e:
+            FormatUtils.log.error('Sucedio un error al intentar obtener la fecha de'\
+                ' modificacion de archivo: {}'.format(e))
+            return
+        except TypeError as e:
+            FormatUtils.log.error('sucedio un error al intentar obtener la diferencia de fechas: {}'
+                .format(e))
+            return
+
+    # es la funcion prinpal en donde comienza la depuracion del folder de logs,
+    # solo se pasa como argumento el directorio base de los logs, para 
+    # comenzar las verificaciones necesarias para la depuracion de los logs
+    @staticmethod
+    def verificacion_depuracion_de_logs(master_path=''):
+        tamanio_folder = FormatUtils.obtener_tamanio_folder(master_path)
+        list_archivos_paths = []
+
+        if tamanio_folder >= 15:
+            FormatUtils.log.info('El folder ya supero los 15MB, (peso actual de {}MB) se'\
+                                 ' procede a depurar el folder'.format(tamanio_folder))
+            list_archivos_paths = FormatUtils.obtener_lista_paths_archivos(master_path)
+            for f in list_archivos_paths:
+                FormatUtils.verificar_diferencia_fecha_archivo_eliminacion(1,f)
+            FormatUtils.log.info('Numero de archivos eliminados: {}'.format(FormatUtils.num_archivos_eliminados))
+        else:
+            FormatUtils.log.info('El folder tiene un peso de {}MB, no es necesario depurar'
+                                 .format(tamanio_folder))
+
 
     # remueve los espacios en los textos de los elementos HTML
     @staticmethod

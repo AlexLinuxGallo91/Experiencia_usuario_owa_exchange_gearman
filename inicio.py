@@ -161,6 +161,9 @@ def configuracion_log(correo_por_probar):
     
     logging.info('Inicializando log: {}'.format(constantes_json.PATH_ABSOLUTO_LOG))
 
+    # verifica si es necesario la depuracion del directorio en donde residen los logs
+    FormatUtils.verificacion_depuracion_de_logs(constantes_json.DIR_BASE_LOG)
+
 # Punto de partida/ejecucion principal del script
 def main(cadena_json=''):
     response = FormatUtils.CADENA_VACIA
