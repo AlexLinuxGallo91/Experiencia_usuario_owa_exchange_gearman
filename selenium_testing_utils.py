@@ -269,17 +269,17 @@ class SeleniumTesting:
                 resultado.mensaje_error = constantes_json.OUTPUT_EXITOSO_1_1
                 resultado.validacion_correcta = True
                 SeleniumTesting.log.info(resultado.mensaje_error)
-            except InvalidSessionIdException:
-                resultado.mensaje_error = 'No se ingreso correctamente al portal. Error de conexion'
+            except InvalidSessionIdException as e:
+                resultado.mensaje_error = 'No se ingreso correctamente al portal. Error de conexion: {}'.format(e)
                 resultado.validacion_correcta = False
                 SeleniumTesting.log.error(resultado.mensaje_error)
             except JavascriptException as e:
-                # Esto es debido a que no se encontro el mensaje de error de credenciales incorrectas
+                # Se ingresa correctamente, debido a que no se encontro el mensaje de error de credenciales incorrectas
                 resultado.mensaje_error = constantes_json.OUTPUT_EXITOSO_1_1
                 resultado.validacion_correcta = True
                 SeleniumTesting.log.info(resultado.mensaje_error)
             except WebDriverException as e:
-                # Esto es debido a que no se encontro el mensaje de error de credenciales incorrectas
+                # Se ingresa correctamente, debido a que no se encontro el mensaje de error de credenciales incorrectas
                 resultado.mensaje_error = constantes_json.OUTPUT_EXITOSO_1_1
                 resultado.validacion_correcta = True
                 SeleniumTesting.log.info(resultado.mensaje_error)
@@ -595,9 +595,9 @@ class SeleniumTesting:
             time.sleep(2)
             SeleniumTesting.cerrar_sesion(driver, result_list)
         except WebDriverException as e:
-            SeleniumTesting.log.error('Error al salir de la sesion, error de red: {}'.format(e.msg))
+            SeleniumTesting.log.error('Error al salir de la sesion, error de red: {}'.format(e))
             resultado_cierre_sesion.mensaje_error = 'No fue posible cerrar la sesi\u00f3n correctamente,'\
-                ' error de red: {}'.format(e.msg)
+                ' error de red: {}'.format(e)
             resultado_cierre_sesion.validacion_correcta = False
         finally:
             driver.close()
