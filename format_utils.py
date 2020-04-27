@@ -38,8 +38,9 @@ class FormatUtils:
                     fp = os.path.join(dirpath, f)
                     tamanio_total += os.path.getsize(fp)
                 except OSError as e:
-                    FormatUtils.log.error('Sucedio un error al obtener '\
-                                          'el peso del archivo {} : {}'.format(fp,e))                    
+                    continue
+                    # FormatUtils.log.error('Sucedio un error al obtener '\
+                    #                       'el peso del archivo {} : {}'.format(fp,e))                    
         
         # regresa el tamnanio del folder en MB
         return int(tamanio_total/(1024*1024))
@@ -78,12 +79,12 @@ class FormatUtils:
                 FormatUtils.num_archivos_eliminados += 1
 
         except OSError as e:
-            FormatUtils.log.error('Sucedio un error al intentar obtener la fecha de'\
-                ' modificacion de archivo: {}'.format(e))
+            # FormatUtils.log.error('Sucedio un error al intentar obtener la fecha de'\
+            #     ' modificacion de archivo: {}'.format(e))
             return
         except TypeError as e:
-            FormatUtils.log.error('sucedio un error al intentar obtener la diferencia de fechas: {}'
-                .format(e))
+            # FormatUtils.log.error('sucedio un error al intentar obtener la diferencia de fechas: {}'
+            #     .format(e))
             return
 
     # es la funcion prinpal en donde comienza la depuracion del folder de logs,
