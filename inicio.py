@@ -83,6 +83,9 @@ def generar_test_json(driver, url_a_navegar, correo):
     # establece los datos en el json con los resultados de cada una de las validaciones
     objeto_json = EvaluacionStepsJson.formar_cuerpo_json(lista_validaciones, objeto_json, correo)
 
+    # establecen el json generado dentro de otra structura JSON con el correo como nodo
+    objeto_json = JsonPorEnviar.establecerEstructuraPrincipalJson(correo.correo, objeto_json)    
+
     return objeto_json
 
 def iniciar_prueba(correo, url_exchange):

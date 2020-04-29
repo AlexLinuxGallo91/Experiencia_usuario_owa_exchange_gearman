@@ -6,6 +6,14 @@ import json
 class JsonPorEnviar:
 
     @staticmethod
+    def establecerEstructuraPrincipalJson(correo, cuerpo_principal_json):
+        raiz = {}
+        raiz.update({'node':correo})
+        raiz.update({'body':cuerpo_principal_json})
+
+        return raiz
+
+    @staticmethod
     def establecerRaizJson():
         raiz = {}
         raiz.update({"start":""})
