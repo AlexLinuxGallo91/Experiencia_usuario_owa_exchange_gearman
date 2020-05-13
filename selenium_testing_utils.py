@@ -2,6 +2,9 @@ from selenium import webdriver
 from selenium.webdriver import chrome
 from selenium.webdriver import Firefox
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import ElementClickInterceptedException
@@ -534,11 +537,13 @@ class SeleniumTesting:
     @staticmethod
     def cerrar_sesion(driver, result_list):
 
+        timeout_cierre_sesion = 10
         resultado_cierre_sesion = Result()
         resultado_cierre_sesion.inicializar_tiempo_de_ejecucion()
         url_actual = ''
         elemento_html_btn_cerrar_sesion = None
-        url_match_cierre_sesion = False
+        cierre_sesion_exitosa = False
+        title_cierre_sesion = "Outlook"
 
         try:
             driver.refresh()
@@ -548,38 +553,68 @@ class SeleniumTesting:
             SeleniumTesting.verificar_dialogo_de_interrupcion(
                 driver, resultado_cierre_sesion)
 
+            # intenta salir de la sesion ejecutando un script js
+            # el cual simula un clic en el boton de cierre de sesion
+
             if SeleniumTesting.owa_descubierto == 2010:
                 elemento_html_btn_cerrar_sesion = driver.find_element_by_id(
                     'lo')
                 elemento_html_btn_cerrar_sesion.click()
                 time.sleep(8)
             elif SeleniumTesting.owa_descubierto == 2016:
-                driver.execute_script('''
-                    document.querySelector('div.ms-Icon--person').click();
+                time.sleep(4)
+                boton_cierre_sesion_owa_2016 = driver.execute_script(\
+                '''
+                    var btn_cierre_sesion = document.querySelector('div.ms-Icon--person');
+                    return btn_cierre_sesion;
                 ''')
 
-                time.sleep(2)
-                driver.execute_script('''
-                    var boton_cierre_sesion = document.evaluate('//span[text()="Cerrar sesi\u00f3n"]', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-                    boton_cierre_sesion.click();
+                time.sleep(4)
+                boton_cierre_sesion_owa_2016.click()
+                time.sleep(8)
+
+                boton_cierre_sesion_owa_2016 = driver.execute_script(\
+                '''
+                    var btn_cierre_sesion = document.evaluate('//span[text()="Cerrar sesi\u00f3n"]', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+                    return btn_cierre_sesion;
                 ''')
+
+                boton_cierre_sesion_owa_2016.click()
+
             elif SeleniumTesting.owa_descubierto == 2013:
-                driver.execute_script('''
-                    document.querySelector('div._hl_d').click();
+
+                boton_cierre_sesion_owa_2013 = driver.execute_script(\
+                '''
+                    var btn_cierre_sesion = document.querySelector('div._hl_d')
+                    return btn_cierre_sesion;
                 ''')
 
-                time.sleep(2)
+                boton_cierre_sesion_owa_2013.click()
+                time.sleep(8)
 
-                driver.execute_script('''
-                    var boton_cierre_sesion = document.evaluate('//span[text()="Cerrar sesi\u00f3n"]', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-                    boton_cierre_sesion.click();
+                boton_cierre_sesion_owa_2013 = driver.execute_script(\
+                '''
+                    var btn_cierre_sesion = document.evaluate('//span[text()="Cerrar sesi\u00f3n"]', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+                    return btn_cierre_sesion;
                 ''')
+
+                boton_cierre_sesion_owa_2013.click()
+                
 
             # obtiene la url actual como una cadena
-            time.sleep(6)
+            time.sleep(2)
             url_actual = driver.current_url
             SeleniumTesting.log.info('Se cierra la sesion, obteniendo la siguiente url de cierre de sesion: {}'
                                      .format(url_actual))
+            driver.refresh()
+            SeleniumTesting.log.info("Se obtiene el siguiente titulo de la url actual: {}".format(driver.title))
+            time.sleep(2)
+
+            # verifica que nos encontremos en la pagina de cierre de sesion del OWA
+            # verifica que el title de la pagina contenfa Outlook
+            condicion_input_user_presente = EC.title_contains(title_cierre_sesion)
+            WebDriverWait(driver, timeout_cierre_sesion).until(condicion_input_user_presente)
+            cierre_sesion_exitosa = True
 
         except NoSuchElementException as e:
             SeleniumTesting.log.error(
@@ -594,30 +629,28 @@ class SeleniumTesting:
             driver.refresh()
             time.sleep(2)
             SeleniumTesting.cerrar_sesion(driver, result_list)
+        except TimeoutException as e:
+            SeleniumTesting.log.error('Error al salir de la sesion: {}'.format(e))
+            resultado_cierre_sesion.mensaje_error = 'No fue posible cerrar la sesi\u00f3n correctamente: {}'.format(e)
+            resultado_cierre_sesion.validacion_correcta = False
         except WebDriverException as e:
-            SeleniumTesting.log.error('Error al salir de la sesion, error de red: {}'.format(e))
-            resultado_cierre_sesion.mensaje_error = 'No fue posible cerrar la sesi\u00f3n correctamente,'\
-                ' error de red: {}'.format(e)
+            SeleniumTesting.log.error('Error al salir de la sesion: {}'.format(e))
+            resultado_cierre_sesion.mensaje_error = 'No fue posible cerrar la sesi\u00f3n correctamente: {}'.format(e)
+            resultado_cierre_sesion.validacion_correcta = False
+        except AttributeError as e:
+            SeleniumTesting.log.error('Error al salir de la sesion, no se encontro el boton de cierre de sesion'\
+                ' dentro de la plataforma del OWA, devolvio un objeto vacio: {}'.format(e))
+            resultado_cierre_sesion.mensaje_error = 'Error al salir de la sesion, no se encontro el boton de cierre de sesion'\
+                ' dentro de la plataforma del OWA, devolvio un objeto vacio: {}'.format(e)
             resultado_cierre_sesion.validacion_correcta = False
         finally:
             driver.close()
             driver.quit()
 
-        if 'exchangeadministrado.com/owa/auth/logoff.aspx' in url_actual:
-            url_match_cierre_sesion = True
-        elif 'outlook.correoexchange.com.mx/owa/auth/logon.aspx' in url_actual:
-            url_match_cierre_sesion = True
-        elif 'outlook.correoexchange.mx/owa/auth/logon.aspx' in url_actual:
-            url_match_cierre_sesion = True
-
-        if url_match_cierre_sesion:
+        if cierre_sesion_exitosa:
             SeleniumTesting.log.info('Se cierra con exito la sesion dentro de la plataforma OWA')
             resultado_cierre_sesion.mensaje_error = constantes_json.OUTPUT_EXITOSO_3_1
             resultado_cierre_sesion.validacion_correcta = True
-        else:
-            resultado_cierre_sesion.mensaje_error = 'No fue posible cerrar la sesion correctamente'
-            resultado_cierre_sesion.validacion_correcta = False
-            SeleniumTesting.log.error(resultado_cierre_sesion.mensaje_error)
 
         resultado_cierre_sesion.finalizar_tiempo_de_ejecucion()
         resultado_cierre_sesion.establecer_tiempo_de_ejecucion()
