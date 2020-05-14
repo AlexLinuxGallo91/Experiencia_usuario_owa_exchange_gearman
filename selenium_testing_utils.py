@@ -630,12 +630,12 @@ class SeleniumTesting:
             time.sleep(2)
             SeleniumTesting.cerrar_sesion(driver, result_list)
         except TimeoutException as e:
-            SeleniumTesting.log.error('Error al salir de la sesion: {}'.format(e))
-            resultado_cierre_sesion.mensaje_error = 'No fue posible cerrar la sesi\u00f3n correctamente: {}'.format(e)
+            SeleniumTesting.log.error('Error al salir de la sesion: {}'.format(e.msg))
+            resultado_cierre_sesion.mensaje_error = 'No fue posible cerrar la sesi\u00f3n correctamente: {}'.format(e.msg)
             resultado_cierre_sesion.validacion_correcta = False
         except WebDriverException as e:
-            SeleniumTesting.log.error('Error al salir de la sesion: {}'.format(e))
-            resultado_cierre_sesion.mensaje_error = 'No fue posible cerrar la sesi\u00f3n correctamente: {}'.format(e)
+            SeleniumTesting.log.error('Error al salir de la sesion: {}'.format(e.msg))
+            resultado_cierre_sesion.mensaje_error = 'No fue posible cerrar la sesi\u00f3n correctamente: {}'.format(e.msg)
             resultado_cierre_sesion.validacion_correcta = False
         except AttributeError as e:
             SeleniumTesting.log.error('Error al salir de la sesion, no se encontro el boton de cierre de sesion'\
