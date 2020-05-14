@@ -77,13 +77,13 @@ class SeleniumTesting:
         perfil_firefox.accept_untrusted_certs = True
         perfil_firefox.assume_untrusted_cert_issuer = False
 
-        opciones_firefox.headless = True
+        opciones_firefox.headless = False
         try:
             webdriver_firefox = webdriver.Firefox(executable_path=path_driver,
                                  firefox_options=opciones_firefox,
                                  firefox_profile=perfil_firefox,
                                  capabilities=firefox_capabilities,
-                                 log_path=constantes_json.DEV_NULL
+                                 #log_path=constantes_json.DEV_NULL
                                  )
         except FileNotFoundError as e:
             SeleniumTesting.log.error('Sucedio un error al intentar configurar el webdriver: {}'.format(e))
@@ -533,6 +533,45 @@ class SeleniumTesting:
                 SeleniumTesting.verificar_dialogo_de_interrupcion(
                     driver, result)
 
+    # al usar el driver PhantomJS, las excepciones se muestran en un formato json,
+    # la funcion detecta si la cadena de la excepcion es un json, de ser correcto,
+    # intenta obtener solamente el mensaje general del error, ignorando las demas
+    # propiedades que contengan el json
+    @staticmethod
+    def formatear_excepcion(ex):
+
+        cadena_excepcion = str(ex)
+        ex_json = None
+        is_ex_json = False
+        
+        SeleniumTesting.log.info('Analizando el mensaje del error: {}'.format(cadena_excepcion))
+
+        try:
+            SeleniumTesting.log.info('Verificando si el error tiene el atributo msg')
+            cadena_excepcion = ex.msg
+            SeleniumTesting.log.info('Se obtiene el mensaje del atributo msg: {}'.format(cadena_excepcion))
+        except AttributeError as e:
+            SeleniumTesting.log.error('La excepcion no tiene el atributo msg'.format(e))
+
+        try:
+            SeleniumTesting.log.info('Verificando si el mensaje del error es un JSON')
+            ex_json = json.loads(cadena_excepcion)
+            SeleniumTesting.log.info('La excepcion es una estructura JSON')
+            is_ex_json = True
+        except ValueError as e:
+            SeleniumTesting.log.info('La excepcion no es una estructura JSON: {}'.format(e))
+
+        if is_ex_json:
+            try:
+                SeleniumTesting.log.info('Obteniendo el mensaje del error')
+                cadena_excepcion = ex_json['errorMessage']
+                SeleniumTesting.log.info('Mensaje de error obtenido: {}'.format(cadena_excepcion))
+            except KeyError as e:
+                SeleniumTesting.log.error('No se encontro el mensaje de error dentro del JSON')
+        
+        return cadena_excepcion
+
+
     # Cierra la sesion desde el aplicativo y termina la sesion en el webdriver
     @staticmethod
     def cerrar_sesion(driver, result_list):
@@ -619,7 +658,8 @@ class SeleniumTesting:
         except NoSuchElementException as e:
             SeleniumTesting.log.error(
                 'Error al salir de la sesion, no se localizo la opcion para el cierre de sesion')
-            resultado_cierre_sesion.mensaje_error = 'No fue posible cerrar la sesi\u00f3n correctamente: {}'.format(e.msg)
+            resultado_cierre_sesion.mensaje_error = 'No fue posible cerrar la sesi\u00f3n correctamente: '\
+                                                    '{}'.format(SeleniumTesting.formatear_excepcion(e))
             resultado_cierre_sesion.validacion_correcta = False
         except ElementClickInterceptedException as e:
             SeleniumTesting.log.error(
@@ -630,18 +670,19 @@ class SeleniumTesting:
             time.sleep(2)
             SeleniumTesting.cerrar_sesion(driver, result_list)
         except TimeoutException as e:
-            SeleniumTesting.log.error('Error al salir de la sesion: {}'.format(e.msg))
+            SeleniumTesting.log.error('Error al salir de la sesion: {}'.format(format(SeleniumTesting.formatear_excepcion(e))))
             resultado_cierre_sesion.mensaje_error = 'No fue posible cerrar la sesi\u00f3n correctamente: {}'.format(e.msg)
             resultado_cierre_sesion.validacion_correcta = False
         except WebDriverException as e:
-            SeleniumTesting.log.error('Error al salir de la sesion: {}'.format(e.msg))
-            resultado_cierre_sesion.mensaje_error = 'No fue posible cerrar la sesi\u00f3n correctamente: {}'.format(e.msg)
+            SeleniumTesting.log.error('Error al salir de la sesion: {}'.format(format(SeleniumTesting.formatear_excepcion(e))))
+            resultado_cierre_sesion.mensaje_error = 'No fue posible cerrar la sesi\u00f3n correctamente: {}'\
+                                                    .format(format(SeleniumTesting.formatear_excepcion(e)))
             resultado_cierre_sesion.validacion_correcta = False
         except AttributeError as e:
             SeleniumTesting.log.error('Error al salir de la sesion, no se encontro el boton de cierre de sesion'\
-                ' dentro de la plataforma del OWA, devolvio un objeto vacio: {}'.format(e))
+                ' dentro de la plataforma del OWA, devolvio un objeto vacio: {}'.format(format(SeleniumTesting.formatear_excepcion(e))))
             resultado_cierre_sesion.mensaje_error = 'Error al salir de la sesion, no se encontro el boton de cierre de sesion'\
-                ' dentro de la plataforma del OWA, devolvio un objeto vacio: {}'.format(e)
+                ' dentro de la plataforma del OWA, devolvio un objeto vacio: {}'.format(format(SeleniumTesting.formatear_excepcion(e)))
             resultado_cierre_sesion.validacion_correcta = False
         finally:
             driver.close()
