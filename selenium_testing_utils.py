@@ -77,13 +77,13 @@ class SeleniumTesting:
         perfil_firefox.accept_untrusted_certs = True
         perfil_firefox.assume_untrusted_cert_issuer = False
 
-        opciones_firefox.headless = False
+        opciones_firefox.headless = True
         try:
             webdriver_firefox = webdriver.Firefox(executable_path=path_driver,
                                  firefox_options=opciones_firefox,
                                  firefox_profile=perfil_firefox,
                                  capabilities=firefox_capabilities,
-                                 #log_path=constantes_json.DEV_NULL
+                                 log_path=constantes_json.DEV_NULL
                                  )
         except FileNotFoundError as e:
             SeleniumTesting.log.error('Sucedio un error al intentar configurar el webdriver: {}'.format(e))
@@ -670,19 +670,20 @@ class SeleniumTesting:
             time.sleep(2)
             SeleniumTesting.cerrar_sesion(driver, result_list)
         except TimeoutException as e:
-            SeleniumTesting.log.error('Error al salir de la sesion: {}'.format(format(SeleniumTesting.formatear_excepcion(e))))
-            resultado_cierre_sesion.mensaje_error = 'No fue posible cerrar la sesi\u00f3n correctamente: {}'.format(e.msg)
+            SeleniumTesting.log.error('Error al salir de la sesion: {}'.format(SeleniumTesting.formatear_excepcion(e)))
+            resultado_cierre_sesion.mensaje_error = 'No fue posible cerrar la sesi\u00f3n correctamente: '\
+                                                    '{}'.format(SeleniumTesting.formatear_excepcion(e))
             resultado_cierre_sesion.validacion_correcta = False
         except WebDriverException as e:
-            SeleniumTesting.log.error('Error al salir de la sesion: {}'.format(format(SeleniumTesting.formatear_excepcion(e))))
-            resultado_cierre_sesion.mensaje_error = 'No fue posible cerrar la sesi\u00f3n correctamente: {}'\
-                                                    .format(format(SeleniumTesting.formatear_excepcion(e)))
+            SeleniumTesting.log.error('Error al salir de la sesion: {}'.format(SeleniumTesting.formatear_excepcion(e)))
+            resultado_cierre_sesion.mensaje_error = 'No fue posible cerrar la sesi\u00f3n correctamente: '\
+                                                    '{}'.format(SeleniumTesting.formatear_excepcion(e))
             resultado_cierre_sesion.validacion_correcta = False
         except AttributeError as e:
             SeleniumTesting.log.error('Error al salir de la sesion, no se encontro el boton de cierre de sesion'\
-                ' dentro de la plataforma del OWA, devolvio un objeto vacio: {}'.format(format(SeleniumTesting.formatear_excepcion(e))))
+                ' dentro de la plataforma del OWA, devolvio un objeto vacio: {}'.format(SeleniumTesting.formatear_excepcion(e)))
             resultado_cierre_sesion.mensaje_error = 'Error al salir de la sesion, no se encontro el boton de cierre de sesion'\
-                ' dentro de la plataforma del OWA, devolvio un objeto vacio: {}'.format(format(SeleniumTesting.formatear_excepcion(e)))
+                ' dentro de la plataforma del OWA, devolvio un objeto vacio: {}'.format(SeleniumTesting.formatear_excepcion(e))
             resultado_cierre_sesion.validacion_correcta = False
         finally:
             driver.close()
