@@ -1,4 +1,5 @@
 from temporizador import Temporizador
+from format_utils import FormatUtils
 import constantes_json
 
 class Result:
@@ -103,7 +104,7 @@ class EvaluacionStepsJson:
         
         return objeto_json
 
-    
+
     # validacion para verificar el inicio de sesion correctamente
     @staticmethod
     def validacion_json_cierre_sesion(validacion_result, objeto_json):
@@ -136,7 +137,17 @@ class EvaluacionStepsJson:
 
         return objeto_json
 
-    
+
+    @staticmethod
+    def formateo_de_tiempos(objeto_json):
+        for i in range(3):
+            objeto_json['steps'][i]['time'] = FormatUtils.truncar_float_cadena(objeto_json['steps'][i]['time'])
+
+        objeto_json['time'] = FormatUtils.truncar_float_cadena(objeto_json['time'])
+
+        return objeto_json
+
+
     @staticmethod
     def formar_cuerpo_json(result_list, objeto_json, correo):
         
@@ -175,7 +186,12 @@ class EvaluacionStepsJson:
         objeto_json['steps'][1]['output'][0]['name'] += ' : {}'.format(correo.correo)
         objeto_json['steps'][2]['output'][0]['name'] += ' : {}'.format(correo.correo)
 
+        # Formatea los tiempos a doce decimales (con el fin de no notificar con 
+        # notacion cientifica)
+        objeto_json = EvaluacionStepsJson.formateo_de_tiempos(objeto_json)
+
         return objeto_json
+
 
 class ValidacionResultList:
 

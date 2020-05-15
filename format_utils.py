@@ -28,6 +28,25 @@ class FormatUtils:
         
         return config
 
+    # funcion encargada de truncar un decimal en caso de tener una notacion cientifica, en caso de ser asi
+    # se trunca el decimal a un maximo de 12 decimales
+    @staticmethod
+    def truncar_float_cadena(cifra_decimal):
+        num = cifra_decimal
+
+        FormatUtils.log.info('formateando el valor {}'.format(cifra_decimal))
+        if isinstance(cifra_decimal, str):
+            try:
+                num = float(cifra_decimal)
+            except ValueError as e:
+                num = 0
+                FormatUtils.log.error('no es posible convertir {} a un valor decimal'.format(cifra_decimal))
+        
+        num = round(num, 12)
+        num = '{:.12f}'.format(num)
+        FormatUtils.log.info('resultado con formato: {}'.format(num))
+        return num
+
     # funcion encargada de obtener el tamanio de un directorio (el resultado los da en MB)
     @staticmethod
     def obtener_tamanio_folder(master_path=''):
