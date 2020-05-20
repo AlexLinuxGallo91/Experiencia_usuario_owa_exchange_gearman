@@ -349,7 +349,7 @@ class SeleniumTesting:
         lista_de_carpetas_localizadas = []
         lista_nombres_de_carpetas_formateadas = []
 
-        time.sleep(8)
+        time.sleep(18)
 
         # verifica mediante el XPath el elemento html que contiene la lista de
         # de carpertas por navegas, a continuacion se muestran los
@@ -636,6 +636,16 @@ class SeleniumTesting:
                     var btn_cierre_sesion = document.evaluate('//span[text()="Cerrar sesi\u00f3n"]', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
                     return btn_cierre_sesion;
                 ''')
+
+                if boton_cierre_sesion_owa_2013 is None:
+                    SeleniumTesting.log.info('No se localiza el boton con el texto cierre de sesion, se intentara'\
+                        ' localizar el boton con la leyenda \'Sign out\'')
+                    
+                    boton_cierre_sesion_owa_2013 = driver.execute_script(\
+                    '''
+                        var btn_cierre_sesion = document.evaluate('//span[text()="Sign out"]', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+                        return btn_cierre_sesion;
+                    ''')
 
                 boton_cierre_sesion_owa_2013.click()
                 
