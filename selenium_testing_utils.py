@@ -30,7 +30,13 @@ class SeleniumTesting:
     # variable/bandera el cual indica que version del owa se esta analizando
     owa_descubierto = 0
     cuenta_sin_dominio = ''
+    url_owa_exchange = ''
     log = logging.getLogger(__name__)
+
+    # bandera para revisar si se encontro error en la plataforma
+    mensaje_error_encontrado_owa = False
+    txt_mensaje_error_encontrado_owa = ''
+
 
     # inicializa un nuevo driver (phantomjs) para la experiencia de usuario
     # con el uso del navegador Phantom JS
@@ -45,7 +51,8 @@ class SeleniumTesting:
         try:
             webdriver_phantomjs = webdriver.PhantomJS(service_args=['--ignore-ssl-errors=true', '--ssl-protocol=any'], 
                                                       executable_path=path_driver, 
-                                                      service_log_path=constantes_json.DEV_NULL)
+                                                      service_log_path=constantes_json.DEV_NULL
+                                                      )
             webdriver_phantomjs.set_window_size(1120,550)
         except FileNotFoundError as e:
             SeleniumTesting.log.error('Sucedio un error al intentar configurar el webdriver: {}'.format(e))
@@ -132,7 +139,6 @@ class SeleniumTesting:
 
         return webdriver_chrome
 
-
     # funcion el cual permite navegar hacia la url que se establezca como parametro
     @staticmethod
     def navegar_a_sitio(webdriver, url_a_navegar, result_list):
@@ -156,7 +162,7 @@ class SeleniumTesting:
         except TimeoutException as e:
             
             resultado.mensaje_error = 'Han transcurrido mas de 60 segundos sin poder acceder a la '\
-                                      'pagina principal de la plataforma "{}": {}'.format(url_a_navegar, e.msg)
+                                      'pagina principal de la plataforma "{}": {}'.format(url_a_navegar, SeleniumTesting.formatear_excepcion(e))
             
             resultado.validacion_correcta = False
            
@@ -164,7 +170,7 @@ class SeleniumTesting:
         except WebDriverException as e:
             resultado.mensaje_error = 'No fue posible ingresar a la plataforma de Exchange OWA, favor de verificar'\
                 ' si se tiene conectividad por internet, error detallado : {}'.format(
-                e.msg)
+                SeleniumTesting.formatear_excepcion(e))
             resultado.validacion_correcta = False
             SeleniumTesting.log.error(resultado.mensaje_error)
 
@@ -178,8 +184,12 @@ class SeleniumTesting:
     # Metodo el cual se encarga de establecer las credenciales en los inputs de la pagina principal del OWA
     @staticmethod
     def iniciar_sesion_en_owa(driver, correo_en_prueba, result_list):
+        # verificacion en texto de mensajes de error en inicio de sesion
+        error_security_context = 'NegotiateSecurityContext'
+
         # se obtiene la cuenta sin el origen del dominio
         SeleniumTesting.cuenta_sin_dominio = FormatUtils.formatear_correo(correo_en_prueba.correo)
+        SeleniumTesting.url_owa_exchange = correo_en_prueba.url
 
         #xpath de botones owa 2010, 2016, 2013
         xpath_btn_owa_2010 = "//input[@type='submit'][@class='btn']"
@@ -237,13 +247,16 @@ class SeleniumTesting:
             time.sleep(1)
             boton_ingreso_correo.click()
 
-            time.sleep(16)
+            time.sleep(18)
+
+            SeleniumTesting.log.info('Titulo actual de la plataforma: {}'.format(driver.title))
+            SeleniumTesting.log.info('URL actual de la plataforma: {}'.format(driver.current_url))
         
         except NoSuchElementException as e:
             
             resultado.mensaje_error = 'No fue posible iniciar sesion dentro de la plataforma OWA, '\
                                       'no se localizaron los inputs para ingresar las credenciales de la cuenta '\
-                                      'de correo electronico Exchange: {}'.format(e.msg)
+                                      'de correo electronico Exchange: {}'.format(SeleniumTesting.formatear_excepcion(e))
 
             resultado.validacion_correcta = False
             SeleniumTesting.log.error(resultado.mensaje_error)
@@ -251,7 +264,7 @@ class SeleniumTesting:
         except WebDriverException as e:
             
             resultado.mensaje_error = 'No fue posible ingresar a la plataforma de Exchange OWA, favor de verificar'\
-                ' si se tiene conectividad por internet, error detallado : {}'.format(e.msg)
+                ' si se tiene conectividad por internet, error detallado : {}'.format(SeleniumTesting.formatear_excepcion(e))
             resultado.validacion_correcta = False
             SeleniumTesting.log.error(resultado.mensaje_error)
 
@@ -316,6 +329,16 @@ class SeleniumTesting:
                 resultado.validacion_correcta = True
                 SeleniumTesting.log.info(resultado.mensaje_error)
 
+        # realiza la validacion de ingreso correcto de sesion
+        # se verifica que no haya algun error que se presente en la plataforma
+        # en caso contrario se obtiene el mensaje del error y se establecer en el 
+        # objeto resultado
+        
+        if SeleniumTesting.verificar_error_plataforma(driver):
+            resultado.mensaje_error = 'No fue posible ingresar a la sesion, se presenta '\
+                'el siguiente mensaje de error en la plataforma: {}'.format(SeleniumTesting.txt_mensaje_error_encontrado_owa)
+            resultado.validacion_correcta = False
+
         resultado.finalizar_tiempo_de_ejecucion()
         resultado.establecer_tiempo_de_ejecucion()
         result_list.result_validacion_acceso_portal_owa = resultado
@@ -339,6 +362,7 @@ class SeleniumTesting:
                 'No se encontro el elemento con el id: {}'.format(id))
             return False
 
+
     # verifica si se encontro el elemento deseado mediante el xpath
     # retorna True si se encontro el elemento
     # en caso contrario retorna False
@@ -356,6 +380,7 @@ class SeleniumTesting:
                 'No se encontro el elemento mediante el xpath: {}'.format(xpath))
             return False
 
+
     @staticmethod
     def verificar_elemento_encontrado_por_clase_js(driver, clase):
         elementos_html = []
@@ -369,6 +394,52 @@ class SeleniumTesting:
         else:
             SeleniumTesting.log.info('No se encontraron elementos Html con la clase {}'.format(clase))
             return False
+
+    
+    # verifica si en la plataforma existe algun error presente, las cuales se enlistan a continuacion y 
+    # que se han descubierto hasta este momento:
+    #
+    #   1) elemento title HTML con leyenda "Error"
+    #   2) En el body de la plataforma se se presente la leyenda 'NegotiateSecurityContext failed with for host'
+    @staticmethod
+    def verificar_error_plataforma(driver):
+        existe_error = False
+        leyenda_title = driver.title
+        mensaje_error_localizado = ''
+
+        if leyenda_title is None:
+            leyenda_title = FormatUtils.CADENA_VACIA
+
+        if 'Error' in leyenda_title:
+            existe_error = True
+           
+            if SeleniumTesting.verificar_elemento_encontrado_por_id(driver, 'errMsg'):
+                elemento_mensaje_error = driver.find_element_by_id('errMsg')
+                mensaje_error_localizado = elemento_mensaje_error.get_attribute('innerHTML')
+                existe_error = True
+
+        elif SeleniumTesting.verificar_elemento_encontrado_por_xpath(driver,'//body'):
+
+            elemento_body = driver.find_element_by_xpath('//body')
+            mensaje_error_localizado = elemento_body.get_attribute('innerHTML')
+
+            if mensaje_error_localizado is None:
+                    mensaje_error_localizado = ''
+
+            if 'NegotiateSecurityContext' in mensaje_error_localizado or \
+                    'LogonDenied' in mensaje_error_localizado:
+                    existe_error = True
+
+        if existe_error:
+            SeleniumTesting.log.error('Se localiza error dentro de la plataforma '\
+                'owa: {}'.format(mensaje_error_localizado))
+            SeleniumTesting.txt_mensaje_error_encontrado_owa = mensaje_error_localizado
+            SeleniumTesting.mensaje_error_encontrado_owa = existe_error
+        else:
+            SeleniumTesting.log.info('No se localizo error alguno dentro de la plataforma owa')
+        
+        return existe_error
+        
 
     # cuando se ingresa correctamen al OWA, se localizan las listas de folders
     # que contiene el usuario en sesion
@@ -400,6 +471,7 @@ class SeleniumTesting:
             tiempo_de_finalizacion = Temporizador.obtener_tiempo_timer() - tiempo_de_inicio
 
             if tiempo_de_finalizacion % 20 == 0:
+                SeleniumTesting.navegar_a_sitio(SeleniumTesting.url_owa_exchange)
                 driver.refresh()
 
             if se_encontraron_carpetas:
@@ -418,6 +490,7 @@ class SeleniumTesting:
                 ' las carpetas dentro de la plataforma OWA'.format(FormatUtils.truncar_float_cadena(tiempo_de_finalizacion)))
             SeleniumTesting.log.error('Title actual de la plataforma: {}'.format(driver.title))
             SeleniumTesting.log.error('Url actual de la plataforma: {}'.format(driver.current_url))
+            
         else:
             SeleniumTesting.log.info('Plataforma OWA version {} identificada'.format(SeleniumTesting.owa_descubierto))
             time.sleep(4)
@@ -476,6 +549,21 @@ class SeleniumTesting:
             SeleniumTesting.log.info('No se localizaron carpetas por navegar dentro de la sesion en la plataforma Exchange OWA')
 
             return result_list
+        
+        # verifica que no haya algun mensaje de error en la plataforma, en caso contrario
+        # se muestra el mensaje de error que aparace en la plataforma dentro del result   
+        elif SeleniumTesting.verificar_error_plataforma(driver):
+
+            result_navegacion_carpetas.finalizar_tiempo_de_ejecucion()
+            result_navegacion_carpetas.establecer_tiempo_de_ejecucion()
+            result_navegacion_carpetas.validacion_correcta = False
+            result_navegacion_carpetas.mensaje_error = 'No fue posible realizar la navegacion entre carpetas, se presenta '\
+                                                       'el siguiente error dentro de la plataforma: '\
+                                                       '{}'.format(SeleniumTesting.txt_mensaje_error_encontrado_owa)            
+            result_list.result_validacion_navegacion_carpetas = result_navegacion_carpetas
+
+            return result_list
+
 
         while Temporizador.obtener_tiempo_timer() <= tiempo_por_verificar:
             for carpeta in lista_carpetas:
@@ -541,9 +629,10 @@ class SeleniumTesting:
                     SeleniumTesting.log.error(
                         'No fue posible localizar la carpeta por navegar dentro de la plataforma OWA, se intentara ingresar nuevamente')
                     SeleniumTesting.log.error('error: {}'.format(e.msg))
-                   
+
                     driver.refresh()
                     SeleniumTesting.log.error('Sucedio error al refrescar la plataforma OWA')
+
                     time.sleep(3)
                 except TimeoutException as e:
                     SeleniumTesting.log.error(
@@ -559,9 +648,20 @@ class SeleniumTesting:
 
         result_navegacion_carpetas.finalizar_tiempo_de_ejecucion()
         result_navegacion_carpetas.establecer_tiempo_de_ejecucion()
-        result_navegacion_carpetas.validacion_correcta = True
-        result_navegacion_carpetas.mensaje_error = constantes_json.OUTPUT_EXITOSO_2_1
+
+        # verifica que no haya algun mensaje de error en la plataforma, en caso contrario
+        # se muestra el mensaje de error que aparace en la plataforma dentro del result
+        if SeleniumTesting.verificar_error_plataforma(driver):
+            result_navegacion_carpetas.validacion_correcta = False
+            result_navegacion_carpetas.mensaje_error = 'No fue posible realizar la navegacion entre carpetas, se presenta '\
+                                                       'el siguiente error dentro de la plataforma: '\
+                                                       '{}'.format(SeleniumTesting.txt_mensaje_error_encontrado_owa)
+        else:
+            result_navegacion_carpetas.validacion_correcta = True
+            result_navegacion_carpetas.mensaje_error = constantes_json.OUTPUT_EXITOSO_2_1
+
         result_list.result_validacion_navegacion_carpetas = result_navegacion_carpetas
+        
         return result_list
 
     # verifica que no aparezca el dialogo de interrupcion (dialogo informativo que en algunas ocasiones
@@ -774,7 +874,16 @@ class SeleniumTesting:
             resultado_cierre_sesion.validacion_correcta = False
 
         finally:
-            
+
+            # verifica que no haya algun mensaje de error en la plataforma, en caso contrario
+            # se muestra el mensaje de error que aparace en la plataforma dentro del result
+            if SeleniumTesting.verificar_error_plataforma(driver):
+                resultado_cierre_sesion.validacion_correcta = False
+                resultado_cierre_sesion.mensaje_error = 'No fue posible cerrar la sesion, se presenta '\
+                                                        'el siguiente error dentro de la plataforma: '\
+                                                        '{}'.format(SeleniumTesting.txt_mensaje_error_encontrado_owa)
+                cierre_sesion_exitosa = False
+
             SeleniumTesting.log.info('Se procede a cerrar la sesion del WebDriver')
             driver.close()
             driver.quit()
